@@ -1,5 +1,30 @@
-// src/app/page.tsx
-export default function Home() {
+// src/app/(dashboard)/page.tsx
+import { createClient } from '../../utils/supabase';
+import { redirect } from 'next/navigation';
+
+export default async function Home() {
+  const supabase = await createClient();
+
+  // 1. Secure the page: check if logged in
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
+    redirect('/login');
+  }
+
+  // 2. Fetch live counts from Supabase
+  const { count: activePosts } = await supabase
+    .from('jobs')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'open');
+
+  const { count: pendingReports } = await supabase
+    .from('reports')
+    .select('*', { count: 'exact', head: true });
+
+  const { count: totalUsers } = await supabase
+    .from('profiles')
+    .select('*', { count: 'exact', head: true });
+
   return (
     <div>
       <h1 className="text-2xl font-extrabold text-slate-900 mb-6">Platform Overview</h1>
@@ -8,17 +33,17 @@ export default function Home() {
         {/* Stat Cards */}
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
           <p className="text-sm font-bold tracking-wide uppercase text-slate-500">Active Posts</p>
-          <p className="text-4xl font-black text-slate-900 mt-2">--</p>
+          <p className="text-4xl font-black text-slate-900 mt-2">{activePosts || 0}</p>
         </div>
         
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
           <p className="text-sm font-bold tracking-wide uppercase text-slate-500">Pending Reports</p>
-          <p className="text-4xl font-black text-rose-500 mt-2">--</p>
+          <p className="text-4xl font-black text-rose-500 mt-2">{pendingReports || 0}</p>
         </div>
         
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-[0_2px_12px_rgba(0,0,0,0.03)]">
           <p className="text-sm font-bold tracking-wide uppercase text-slate-500">Total Users</p>
-          <p className="text-4xl font-black text-slate-900 mt-2">--</p>
+          <p className="text-4xl font-black text-slate-900 mt-2">{totalUsers || 0}</p>
         </div>
       </div>
     </div>

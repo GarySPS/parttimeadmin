@@ -2,6 +2,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { dismissReport, deleteJobAndNotify, blockUserAndNotify } from './actions';
 
 type ActionModalState = {
@@ -9,10 +10,22 @@ type ActionModalState = {
   type: 'DELETE_JOB' | 'BLOCK_USER' | null;
   reportId: string;
   targetId: string;
-  employerId?: string; // Used for notifying job owner
+  employerId?: string;
 } | null;
 
-export default function ReportsClient({ reports, reportedUsersMap }: { reports: any[], reportedUsersMap: Record<string, string> }) {
+export default function ReportsClient({ 
+  reports, 
+  reportedUsersMap,
+  totalCount,
+  currentPage,
+  totalPages
+}: { 
+  reports: any[], 
+  reportedUsersMap: Record<string, string>,
+  totalCount: number,
+  currentPage: number,
+  totalPages: number
+}) {
   const [modal, setModal] = useState<ActionModalState>(null);
   const [reasonText, setReasonText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -33,20 +46,20 @@ export default function ReportsClient({ reports, reportedUsersMap }: { reports: 
   };
 
   return (
-    <div className="w-full max-w-7xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto flex flex-col min-h-[80vh]">
       
-      {/* Header: Stacks on mobile, inline on desktop */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 sm:mb-6 gap-3 shrink-0">
         <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">Platform Reports</h1>
         <span className="px-3 py-1.5 bg-slate-100 text-slate-600 rounded-full text-xs sm:text-sm font-bold border border-slate-200 shadow-sm">
-          {reports.length} Total
+          {totalCount} Total
         </span>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col flex-1">
         
         {/* =========================================
-            MOBILE VIEW: Stacked Cards (Hidden on Desktop)
+            MOBILE VIEW: Stacked Cards
             ========================================= */}
         <div className="block md:hidden divide-y divide-slate-100">
           {reports.map((report) => {
@@ -60,8 +73,6 @@ export default function ReportsClient({ reports, reportedUsersMap }: { reports: 
 
             return (
               <div key={report.id} className="p-4 flex flex-col gap-3 hover:bg-slate-50/50 transition-colors">
-                
-                {/* Date & Badge */}
                 <div className="flex items-start justify-between gap-3">
                   <span className="text-xs font-semibold text-slate-500">
                     {new Date(report.created_at).toLocaleDateString()}
@@ -73,12 +84,9 @@ export default function ReportsClient({ reports, reportedUsersMap }: { reports: 
                   </span>
                 </div>
 
-                {/* Target Link & Reason */}
                 <div className="flex flex-col gap-1.5">
                   <a 
-                    href={targetLink} 
-                    target="_blank" 
-                    rel="noopener noreferrer" 
+                    href={targetLink} target="_blank" rel="noopener noreferrer" 
                     className="text-sm font-bold text-slate-900 hover:text-blue-600 flex items-start gap-1.5 leading-snug line-clamp-2"
                   >
                     {targetName}
@@ -91,7 +99,6 @@ export default function ReportsClient({ reports, reportedUsersMap }: { reports: 
                   </p>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="mt-1 pt-3 border-t border-slate-100 flex gap-2">
                   <button 
                     onClick={() => dismissReport(report.id)} 
@@ -115,22 +122,15 @@ export default function ReportsClient({ reports, reportedUsersMap }: { reports: 
                     </button>
                   )}
                 </div>
-
               </div>
             );
           })}
-
-          {reports.length === 0 && (
-            <div className="p-8 text-center text-slate-500 text-sm font-medium">
-              No reports found. Your platform is clean!
-            </div>
-          )}
         </div>
 
         {/* =========================================
-            DESKTOP VIEW: Data Table (Hidden on Mobile)
+            DESKTOP VIEW: Data Table
             ========================================= */}
-        <div className="hidden md:block overflow-x-auto">
+        <div className="hidden md:block overflow-x-auto flex-1">
           <table className="w-full text-left text-sm text-slate-600">
             <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold text-[11px] tracking-wider">
               <tr>
@@ -196,17 +196,46 @@ export default function ReportsClient({ reports, reportedUsersMap }: { reports: 
                   </tr>
                 );
               })}
-
-              {reports.length === 0 && (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-slate-500 font-medium">
-                    No reports found. Your platform is clean!
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
+
+        {/* =========================================
+            PAGINATION CONTROLS
+            ========================================= */}
+        <div className="flex items-center justify-between px-4 sm:px-6 py-4 border-t border-slate-200 bg-slate-50 mt-auto shrink-0">
+          <Link
+            href={currentPage > 1 ? `/reports?page=${currentPage - 1}` : '#'}
+            className={`px-4 py-2 text-sm font-bold rounded-xl transition-all shadow-sm ${
+              currentPage > 1 
+                ? 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 active:scale-95' 
+                : 'bg-slate-100 text-slate-400 border border-transparent opacity-50 cursor-not-allowed pointer-events-none'
+            }`}
+          >
+            Previous
+          </Link>
+          
+          <span className="text-sm font-semibold text-slate-600">
+            Page {currentPage} of {totalPages}
+          </span>
+          
+          <Link
+            href={currentPage < totalPages ? `/reports?page=${currentPage + 1}` : '#'}
+            className={`px-4 py-2 text-sm font-bold rounded-xl transition-all shadow-sm ${
+              currentPage < totalPages 
+                ? 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100 active:scale-95' 
+                : 'bg-slate-100 text-slate-400 border border-transparent opacity-50 cursor-not-allowed pointer-events-none'
+            }`}
+          >
+            Next
+          </Link>
+        </div>
+
+        {reports.length === 0 && (
+          <div className="p-8 text-center text-slate-500 text-sm font-medium border-t border-slate-100">
+            No reports found. Your platform is clean!
+          </div>
+        )}
       </div>
 
       {/* MODAL FOR REASON */}

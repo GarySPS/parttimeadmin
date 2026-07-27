@@ -3,13 +3,25 @@ import { createClient } from '../../../utils/supabase';
 import { redirect } from 'next/navigation';
 import ReportsClient from './ReportsClient';
 
-export default async function ReportsPage() {
+export default async function ReportsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  // Fetch reports + job details (Now including employer_id so we know who to notify)
-  const { data: reports } = await supabase
+  // --- PAGINATION LOGIC ---
+  const resolvedSearchParams = await searchParams;
+  const currentPage = Number(resolvedSearchParams?.page) || 1;
+  const itemsPerPage = 10;
+  
+  const from = (currentPage - 1) * itemsPerPage;
+  const to = from + itemsPerPage - 1;
+
+  // Fetch reports WITH count and range limits
+  const { data: reports, count } = await supabase
     .from('reports')
     .select(`
       id,
@@ -18,10 +30,13 @@ export default async function ReportsPage() {
       job_id,
       reported_user_id,
       jobs ( id, title, employer_id )
-    `)
-    .order('created_at', { ascending: false });
+    `, { count: 'exact' })
+    .order('created_at', { ascending: false })
+    .range(from, to);
 
-  // Fetch reported usernames
+  const totalPages = count ? Math.ceil(count / itemsPerPage) : 1;
+
+  // Fetch reported usernames securely
   const userIds = reports?.map((r) => r.reported_user_id).filter(Boolean) || [];
   const reportedUsersMap: Record<string, string> = {};
   
@@ -36,5 +51,13 @@ export default async function ReportsPage() {
     });
   }
 
-  return <ReportsClient reports={reports || []} reportedUsersMap={reportedUsersMap} />;
+  return (
+    <ReportsClient 
+      reports={reports || []} 
+      reportedUsersMap={reportedUsersMap} 
+      totalCount={count || 0}
+      currentPage={currentPage}
+      totalPages={totalPages}
+    />
+  );
 }

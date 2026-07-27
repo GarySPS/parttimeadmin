@@ -3,12 +3,28 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { LayoutDashboard, FileText, Users, Flag, LogOut, Menu, X } from 'lucide-react';
+
+// Define navigation links in one place for easy editing
+const navLinks = [
+  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+  { name: 'Manage Posts', href: '/posts', icon: FileText },
+  { name: 'Reports', href: '/reports', icon: Flag },
+  { name: 'Users & KYC', href: '/users', icon: Users },
+];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const pathname = usePathname(); // Gets the current URL path
 
   const closeSidebar = () => setIsSidebarOpen(false);
+
+  // Quick sign out handler (you can wire this to Supabase later)
+  const handleSignOut = () => {
+    // Add your supabase signout logic here later
+    window.location.href = '/login';
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col md:flex-row text-slate-900 antialiased">
@@ -16,44 +32,52 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       {/* Mobile Overlay (Darkens background when sidebar is open) */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/50 z-40 md:hidden backdrop-blur-sm transition-opacity"
+          className="fixed inset-0 bg-slate-900/40 z-40 md:hidden backdrop-blur-sm transition-opacity"
           onClick={closeSidebar}
         />
       )}
 
       {/* Sidebar */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0f172a] text-slate-300 flex flex-col shadow-xl transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-[#0f172a] text-slate-300 flex flex-col shadow-2xl transform transition-transform duration-300 ease-in-out ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}>
         <div className="p-6 mb-4 flex items-center justify-between">
           <h1 className="text-2xl font-black text-white tracking-tight">
             PartTime<span className="text-[#e3b23c]">Admin</span>
           </h1>
           {/* Mobile Close Button */}
-          <button onClick={closeSidebar} className="md:hidden text-slate-400 hover:text-white transition-colors">
+          <button onClick={closeSidebar} className="md:hidden text-slate-400 hover:text-white transition-colors active:scale-90 p-1">
             <X size={24} />
           </button>
         </div>
         
-        <nav className="flex-1 px-4 space-y-1.5">
-          <Link href="/" onClick={closeSidebar} className="flex items-center gap-3 px-4 py-3 bg-slate-800/50 text-white font-medium rounded-xl transition-colors border border-slate-700/50">
-            <LayoutDashboard size={20} className="text-[#e3b23c]" /> 
-            Dashboard
-          </Link>
-          <Link href="/posts" onClick={closeSidebar} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800/50 hover:text-white font-medium rounded-xl transition-colors">
-            <FileText size={20} /> 
-            Manage Posts
-          </Link>
-          <Link href="/reports" onClick={closeSidebar} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800/50 hover:text-white font-medium rounded-xl transition-colors">
-            <Flag size={20} /> 
-            Reports
-          </Link>
-          <Link href="/users" onClick={closeSidebar} className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800/50 hover:text-white font-medium rounded-xl transition-colors">
-            <Users size={20} /> 
-            Users & KYC
-          </Link>
+        <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            // Check if active (exact match for home, or starts with for sub-pages)
+            const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
+
+            return (
+              <Link 
+                key={link.name}
+                href={link.href} 
+                onClick={closeSidebar} 
+                className={`flex items-center gap-3 px-4 py-3 font-medium rounded-xl transition-all active:scale-95 ${
+                  isActive 
+                    ? 'bg-slate-800 text-white shadow-sm border border-slate-700' 
+                    : 'text-slate-400 hover:bg-slate-800/50 hover:text-white border border-transparent'
+                }`}
+              >
+                <Icon size={20} className={isActive ? 'text-[#e3b23c]' : 'opacity-70'} /> 
+                {link.name}
+              </Link>
+            );
+          })}
         </nav>
 
-        <div className="p-4 border-t border-slate-800 mt-auto">
-          <button className="flex items-center gap-3 px-4 py-3 w-full hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 font-medium rounded-xl transition-colors">
+        <div className="p-4 border-t border-slate-800/50 mt-auto">
+          <button 
+            onClick={handleSignOut}
+            className="flex items-center gap-3 px-4 py-3 w-full hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 font-medium rounded-xl transition-all active:scale-95"
+          >
             <LogOut size={20} /> 
             Sign Out
           </button>
@@ -69,7 +93,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
             {/* Hamburger Menu Button (Mobile Only) */}
             <button 
               onClick={() => setIsSidebarOpen(true)}
-              className="md:hidden p-2 -ml-2 text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+              className="md:hidden p-2.5 -ml-2 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors active:scale-90"
             >
               <Menu size={24} />
             </button>
@@ -77,8 +101,8 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           </div>
           
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-slate-500 hidden sm:block">Admin Mode</span>
-            <div className="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center font-bold border border-emerald-200 shadow-sm">
+            <span className="text-sm font-bold text-slate-400 uppercase tracking-widest hidden sm:block">Admin Mode</span>
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-400 to-emerald-600 text-white rounded-full flex items-center justify-center font-bold shadow-sm border-2 border-white ring-2 ring-emerald-50">
               A
             </div>
           </div>

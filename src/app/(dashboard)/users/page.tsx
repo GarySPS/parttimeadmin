@@ -91,9 +91,6 @@ export default async function UsersPage({
                 </div>
 
                 <div className="mt-2 pt-3 border-t border-slate-100 flex gap-2">
-                  <button className="flex-1 py-2.5 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-200">
-                    Toggle KYC
-                  </button>
                   <button className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-colors border shadow-sm ${
                     profile.is_blocked ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
                   }`}>
@@ -161,9 +158,6 @@ export default async function UsersPage({
                       </span>
                     </td>
                     <td className="px-6 py-4 text-right flex items-center justify-end gap-2">
-                      <button className="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl text-xs font-bold transition-colors border border-slate-200 shadow-sm active:scale-95">
-                        Toggle KYC
-                      </button>
                       <button className={`px-4 py-2 rounded-xl text-xs font-bold transition-colors border shadow-sm active:scale-95 ${
                         profile.is_blocked ? 'bg-emerald-50 text-emerald-600 border-emerald-200 hover:bg-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-200 hover:bg-rose-100'
                       }`}>

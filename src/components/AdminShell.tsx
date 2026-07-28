@@ -4,14 +4,15 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, FileText, Users, Flag, LogOut, Menu, X } from 'lucide-react';
+import { LayoutDashboard, FileText, Users, Flag, LogOut, Menu, X, ShieldCheck } from 'lucide-react';
 
-// Define navigation links in one place for easy editing
+// Separate KYC from Users
 const navLinks = [
   { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   { name: 'Manage Posts', href: '/posts', icon: FileText },
   { name: 'Reports', href: '/reports', icon: Flag },
-  { name: 'Users & KYC', href: '/users', icon: Users },
+  { name: 'KYC Reviews', href: '/kyc', icon: ShieldCheck },
+  { name: 'All Users', href: '/users', icon: Users },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {

@@ -3,6 +3,7 @@ import { createClient } from '../../../utils/supabase';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import Link from 'next/link';
+import DocumentModal from '@/components/DocumentModal';
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js';
 
 export default async function KycPage({
@@ -118,8 +119,8 @@ export default async function KycPage({
                 <div className="flex flex-wrap gap-2 text-xs font-bold mt-2">
                   {app.tier === 'personal' ? (
                     <>
-                      {idCardUrl && <a href={idCardUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200">View ID</a>}
-                      {selfieUrl && <a href={selfieUrl} target="_blank" rel="noopener noreferrer" className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200">View Selfie</a>}
+                      {idCardUrl && <DocumentModal url={idCardUrl} label="View ID" className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-xs font-bold" />}
+                      {selfieUrl && <DocumentModal url={selfieUrl} label="View Selfie" className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 text-xs font-bold" />}
                     </>
                   ) : (
                     <span className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 text-gray-600 rounded-lg border border-gray-200">
@@ -181,8 +182,8 @@ export default async function KycPage({
                     <td className="px-6 py-4 flex gap-2">
                       {app.tier === 'personal' ? (
                         <>
-                          {idCardUrl && <a href={idCardUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-slate-600 hover:text-blue-600 underline">ID Card</a>}
-                          {selfieUrl && <a href={selfieUrl} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-slate-600 hover:text-blue-600 underline">Selfie</a>}
+                          {idCardUrl && <DocumentModal url={idCardUrl} label="ID Card" className="text-xs font-bold text-slate-600 hover:text-blue-600 underline" />}
+                          {selfieUrl && <DocumentModal url={selfieUrl} label="Selfie" className="text-xs font-bold text-slate-600 hover:text-blue-600 underline" />}
                         </>
                       ) : (
                         <span className="flex items-center gap-1.5 text-xs font-bold text-gray-500">

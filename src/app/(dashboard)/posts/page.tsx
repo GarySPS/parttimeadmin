@@ -21,10 +21,10 @@ export default async function ManagePostsPage({
   const from = (currentPage - 1) * itemsPerPage;
   const to = from + itemsPerPage - 1;
 
-  // Fetch jobs WITH count and range limits
+  // Fetch jobs WITH count and join the employer profile
   const { data: jobs, count } = await supabase
     .from('jobs')
-    .select('*', { count: 'exact' })
+    .select('*, profiles(contact_username, handle, avatar_url)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, to);
 

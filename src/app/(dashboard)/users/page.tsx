@@ -2,6 +2,7 @@
 import { createClient } from '../../../utils/supabase';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import DocumentModal from '@/components/DocumentModal';
 
 export default async function UsersPage({
   searchParams,
@@ -23,10 +24,10 @@ export default async function UsersPage({
   const from = (currentPage - 1) * itemsPerPage;
   const to = from + itemsPerPage - 1;
 
-  // Build query dynamically
+  // Build query dynamically (Joined with kyc_applications)
   let query = supabase
     .from('profiles')
-    .select('*', { count: 'exact' })
+    .select('*, kyc_applications(id_card_url, selfie_url)', { count: 'exact' })
     .order('created_at', { ascending: false })
     .range(from, to);
 
@@ -37,6 +38,13 @@ export default async function UsersPage({
 
   const { data: profiles, count } = await query;
   const totalPages = count ? Math.ceil(count / itemsPerPage) : 1;
+
+  // Helper to generate temporary view links for private bucket images
+  const getImageUrl = async (path: string | null) => {
+    if (!path) return null;
+    const { data } = await supabase.storage.from('kyc_documents').createSignedUrl(path, 3600);
+    return data?.signedUrl;
+  };
 
   return (
     <div className="w-full max-w-7xl mx-auto">
@@ -77,7 +85,7 @@ export default async function UsersPage({
             MOBILE VIEW: Stacked Cards (Compacted)
             ========================================= */}
         <div className="block md:hidden divide-y divide-slate-100">
-          {profiles?.map((profile) => {
+          {profiles?.map(async (profile) => {
             let displayName = profile.contact_username;
             if (!displayName) {
               displayName = profile.handle?.startsWith('user_') 
@@ -85,6 +93,11 @@ export default async function UsersPage({
                 : (profile.handle || 'Unknown');
             }
             const profileLink = `https://parttimemm.com/user/${profile.id}`;
+
+            // Extract documents if they exist
+            const kycData = profile.kyc_applications?.find((app: any) => app.id_card_url) || profile.kyc_applications?.[0];
+            const idCardUrl = await getImageUrl(kycData?.id_card_url);
+            const selfieUrl = await getImageUrl(kycData?.selfie_url);
 
             return (
               <div key={profile.id} className="p-3 sm:p-4 hover:bg-slate-50/50 transition-colors">
@@ -99,12 +112,7 @@ export default async function UsersPage({
                     )}
                   </div>
                   <div>
-                    <a 
-                      href={profileLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-bold text-slate-900 hover:text-blue-600 line-clamp-1"
-                    >
+                    <a href={profileLink} target="_blank" rel="noopener noreferrer" className="text-sm font-bold text-slate-900 hover:text-blue-600 line-clamp-1">
                       {displayName}
                     </a>
                     <span className="text-xs font-semibold text-slate-500 capitalize">{profile.role || 'User'}</span>
@@ -119,19 +127,28 @@ export default async function UsersPage({
                   </div>
                 )}
 
-                {/* Status Badges & Action Button */}
-                <div className="mt-3 flex items-center justify-between">
-                  <div className="flex gap-2">
-                    <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${
-                      profile.is_verified ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-slate-100 text-slate-500 border-slate-200'
-                    }`}>
-                      {profile.is_verified ? 'Verified' : 'Unverified'}
-                    </span>
-                    <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${
-                      profile.is_blocked ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'
-                    }`}>
-                      {profile.is_blocked ? 'Blocked' : 'Active'}
-                    </span>
+                {/* Status Badges, Docs & Action Button */}
+                <div className="mt-3 flex items-end justify-between flex-wrap gap-3">
+                  <div className="flex flex-col gap-2">
+                    <div className="flex gap-2">
+                      <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${
+                        profile.is_verified ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-slate-100 text-slate-500 border-slate-200'
+                      }`}>
+                        {profile.is_verified ? 'Verified' : 'Unverified'}
+                      </span>
+                      <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase tracking-wider border ${
+                        profile.is_blocked ? 'bg-rose-50 text-rose-600 border-rose-200' : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                      }`}>
+                        {profile.is_blocked ? 'Blocked' : 'Active'}
+                      </span>
+                    </div>
+
+                    {(idCardUrl || selfieUrl) && (
+                      <div className="flex gap-2 mt-1">
+                        {idCardUrl && <DocumentModal url={idCardUrl} label="View ID" className="px-2 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded text-[10px] font-bold" />}
+                        {selfieUrl && <DocumentModal url={selfieUrl} label="View Selfie" className="px-2 py-1 bg-slate-100 text-slate-700 border border-slate-200 rounded text-[10px] font-bold" />}
+                      </div>
+                    )}
                   </div>
                   
                   <button className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-colors border shadow-sm ${
@@ -161,7 +178,7 @@ export default async function UsersPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {profiles?.map((profile) => {
+              {profiles?.map(async (profile) => {
                 let displayName = profile.contact_username;
                 if (!displayName) {
                   displayName = profile.handle?.startsWith('user_') 
@@ -169,6 +186,11 @@ export default async function UsersPage({
                     : (profile.handle || 'Unknown');
                 }
                 const profileLink = `https://parttimemm.com/user/${profile.id}`;
+
+                // Extract documents if they exist
+                const kycData = profile.kyc_applications?.find((app: any) => app.id_card_url) || profile.kyc_applications?.[0];
+                const idCardUrl = await getImageUrl(kycData?.id_card_url);
+                const selfieUrl = await getImageUrl(kycData?.selfie_url);
 
                 return (
                   <tr key={profile.id} className="hover:bg-slate-50/50 transition-colors">
@@ -183,10 +205,7 @@ export default async function UsersPage({
                         </div>
                         
                         <div className="flex flex-col">
-                          <a 
-                            href={profileLink} target="_blank" rel="noopener noreferrer"
-                            className="font-semibold text-slate-900 hover:text-blue-600 hover:underline max-w-[200px] truncate"
-                          >
+                          <a href={profileLink} target="_blank" rel="noopener noreferrer" className="font-semibold text-slate-900 hover:text-blue-600 hover:underline max-w-[200px] truncate">
                             {displayName}
                           </a>
                           
@@ -197,18 +216,26 @@ export default async function UsersPage({
                             </span>
                           )}
                         </div>
-                        
                       </div>
                     </td>
                     <td className="px-6 py-4 font-semibold capitalize text-slate-700">
                       {profile.role || 'User'}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                        profile.is_verified ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-slate-100 text-slate-500 border-slate-200'
-                      }`}>
-                        {profile.is_verified ? 'Verified' : 'Unverified'}
-                      </span>
+                      <div className="flex flex-col gap-2 items-start">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                          profile.is_verified ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-slate-100 text-slate-500 border-slate-200'
+                        }`}>
+                          {profile.is_verified ? 'Verified' : 'Unverified'}
+                        </span>
+
+                        {(idCardUrl || selfieUrl) && (
+                          <div className="flex gap-2">
+                            {idCardUrl && <DocumentModal url={idCardUrl} label="ID Card" className="text-xs font-bold text-slate-500 hover:text-blue-600 underline" />}
+                            {selfieUrl && <DocumentModal url={selfieUrl} label="Selfie" className="text-xs font-bold text-slate-500 hover:text-blue-600 underline" />}
+                          </div>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${

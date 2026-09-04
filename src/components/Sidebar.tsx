@@ -14,26 +14,26 @@ export default function Sidebar() {
       <nav className="flex-1 px-4 space-y-1.5">
         <Link href="/" className="flex items-center gap-3 px-4 py-3 bg-slate-800/50 text-white font-medium rounded-xl transition-colors border border-slate-700/50">
           <LayoutDashboard size={20} className="text-[#e3b23c]" /> 
-          Dashboard
+          ဒက်ရှ်ဘုတ်
         </Link>
         <Link href="/posts" className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800/50 hover:text-white font-medium rounded-xl transition-colors">
           <FileText size={20} /> 
-          Manage Posts
+          ပို့စ်များကို စီမံရန်
         </Link>
         <Link href="/reports" className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800/50 hover:text-white font-medium rounded-xl transition-colors">
           <Flag size={20} /> 
-          Reports
+          တိုင်ကြားစာများ
         </Link>
         <Link href="/users" className="flex items-center gap-3 px-4 py-3 hover:bg-slate-800/50 hover:text-white font-medium rounded-xl transition-colors">
           <Users size={20} /> 
-          Users & KYC
+          အသုံးပြုသူများ နှင့် KYC
         </Link>
       </nav>
 
       <div className="p-4 border-t border-slate-800 mt-auto">
         <button className="flex items-center gap-3 px-4 py-3 w-full hover:bg-rose-500/10 text-slate-400 hover:text-rose-400 font-medium rounded-xl transition-colors">
           <LogOut size={20} /> 
-          Sign Out
+          အကောင့်ထွက်ရန်
         </button>
       </div>
     </aside>

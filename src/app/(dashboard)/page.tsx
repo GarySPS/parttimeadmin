@@ -3,7 +3,7 @@
 import { createClient } from '../../utils/supabase';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Search, User, MoreVertical } from 'lucide-react'; // Added Lucide icons
+import { Search, User } from 'lucide-react';
 
 export default async function Home() {
   const supabase = await createClient();
@@ -24,6 +24,11 @@ export default async function Home() {
     .from('reports')
     .select('*', { count: 'exact', head: true });
 
+  const { count: pendingKyc } = await supabase
+    .from('kyc_applications')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'pending');
+
   const { count: totalUsers } = await supabase
     .from('profiles')
     .select('*', { count: 'exact', head: true });
@@ -40,7 +45,7 @@ export default async function Home() {
       <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-4 sm:mb-6">Platform Overview</h1>
       
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
         
         {/* Active Posts Card */}
         <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
@@ -49,6 +54,15 @@ export default async function Home() {
           </div>
           <p className="text-xs sm:text-sm font-bold tracking-wide uppercase text-slate-500">Active Posts</p>
           <p className="text-3xl sm:text-4xl font-black text-slate-900 mt-2">{activePosts || 0}</p>
+        </div>
+
+        {/* Pending KYC Card (NEW) */}
+        <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <svg className="w-16 h-16 text-amber-600" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+          </div>
+          <p className="text-xs sm:text-sm font-bold tracking-wide uppercase text-slate-500">Pending KYC</p>
+          <p className="text-3xl sm:text-4xl font-black text-amber-500 mt-2">{pendingKyc || 0}</p>
         </div>
         
         {/* Pending Reports Card */}
@@ -80,53 +94,71 @@ export default async function Home() {
           </Link>
         </div>
 
-        {/* Modern Search Bar */}
-        <div className="relative mb-5">
+        {/* Functional Search Bar */}
+        <form action="/users" method="GET" className="relative mb-5">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
             <Search size={18} />
           </div>
           <input 
             type="text" 
-            className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-shadow shadow-sm" 
-            placeholder="Search users..."
+            name="search"
+            className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#e3b23c] focus:border-[#e3b23c] sm:text-sm transition-shadow shadow-sm" 
+            placeholder="Search users... (Press Enter to search)"
           />
-        </div>
+        </form>
 
         {/* Dynamic User List */}
         <div className="space-y-3">
           {recentUsers && recentUsers.length > 0 ? (
-            recentUsers.map((profile) => (
-              <div key={profile.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4 hover:border-slate-200 transition-colors">
-                <div className="w-10 h-10 rounded-full bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-500">
-                  <User size={20} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-center mb-1">
-                    <h3 className="text-sm font-bold text-slate-800 truncate">
-                      {profile.full_name || profile.username || `Unknown (${profile.id.substring(0, 4).toUpperCase()})`}
-                    </h3>
-                    <button className="text-slate-400 hover:text-slate-700 p-1 -mr-1 rounded-lg transition-colors">
-                      <MoreVertical size={18} />
-                    </button>
+            recentUsers.map((profile) => {
+              // Properly format display name based on schema
+              let displayName = profile.contact_username;
+              if (!displayName) {
+                displayName = profile.handle?.startsWith('user_') 
+                  ? `Unknown (${profile.handle.slice(5, 9).toUpperCase()})` 
+                  : (profile.handle || 'Unknown');
+              }
+
+              return (
+                <div key={profile.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4 hover:border-slate-200 transition-colors">
+                  <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden flex-shrink-0 flex items-center justify-center text-slate-500">
+                    {profile.avatar_url ? (
+                      <img src={profile.avatar_url} alt="avatar" className="w-full h-full object-cover" />
+                    ) : (
+                      <User size={20} />
+                    )}
                   </div>
-                  <p className="text-xs text-slate-500 mb-2">{profile.role || 'Seeker'}</p>
                   
-                  <div className="flex gap-2">
-                    {profile.is_verified ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700">Verified</span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">Unverified</span>
-                    )}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center mb-1">
+                      <h3 className="text-sm font-bold text-slate-800 truncate">
+                        <a href={`https://parttimemm.com/user/${profile.id}`} target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 hover:underline">
+                          {displayName}
+                        </a>
+                      </h3>
+                      <a href={`https://parttimemm.com/user/${profile.id}`} target="_blank" rel="noopener noreferrer" className="text-xs font-bold text-blue-600 hover:underline">
+                        View Profile
+                      </a>
+                    </div>
+                    <p className="text-xs text-slate-500 mb-2 capitalize">{profile.role || 'User'}</p>
                     
-                    {profile.status === 'blocked' ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-100 text-rose-700">Blocked</span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700">Active</span>
-                    )}
+                    <div className="flex gap-2">
+                      {profile.is_verified ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-600 border border-emerald-200">Verified</span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-slate-50 text-slate-500 border border-slate-200">Unverified</span>
+                      )}
+                      
+                      {profile.is_blocked ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-rose-50 text-rose-600 border border-rose-200">Blocked</span>
+                      ) : (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wider uppercase bg-emerald-50 text-emerald-600 border border-emerald-200">Active</span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="text-center py-10 bg-white rounded-2xl border border-slate-200 border-dashed">
               <p className="text-sm font-medium text-slate-500">No recent users found</p>

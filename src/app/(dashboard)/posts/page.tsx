@@ -13,7 +13,7 @@ export default async function ManagePostsPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  // --- PAGINATION LOGIC ---
+  // --- စာမျက်နှာ အပိုင်းခွဲခြားခြင်း (PAGINATION LOGIC) ---
   const resolvedSearchParams = await searchParams;
   const currentPage = Number(resolvedSearchParams?.page) || 1;
   const itemsPerPage = 10;
@@ -21,7 +21,7 @@ export default async function ManagePostsPage({
   const from = (currentPage - 1) * itemsPerPage;
   const to = from + itemsPerPage - 1;
 
-  // Fetch jobs WITH count and join the employer profile
+  // အလုပ်ခေါ်စာများကို အရေအတွက်နှင့်တကွ ရယူပြီး အလုပ်ရှင် ပရိုဖိုင်နှင့် ချိတ်ဆက်ရန်
   const { data: jobs, count } = await supabase
     .from('jobs')
     .select('*, profiles(contact_username, handle, avatar_url)', { count: 'exact' })

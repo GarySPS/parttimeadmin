@@ -12,7 +12,7 @@ export default async function ReportsPage({
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  // --- PAGINATION LOGIC ---
+  // --- စာမျက်နှာ အပိုင်းခွဲခြားခြင်း (PAGINATION LOGIC) ---
   const resolvedSearchParams = await searchParams;
   const currentPage = Number(resolvedSearchParams?.page) || 1;
   const itemsPerPage = 10;
@@ -20,7 +20,7 @@ export default async function ReportsPage({
   const from = (currentPage - 1) * itemsPerPage;
   const to = from + itemsPerPage - 1;
 
-  // Fetch reports WITH count and range limits
+  // တိုင်ကြားစာများကို အရေအတွက်နှင့် ကန့်သတ်ချက်များဖြင့် ရယူရန်
   const { data: reports, count } = await supabase
     .from('reports')
     .select(`
@@ -36,7 +36,7 @@ export default async function ReportsPage({
 
   const totalPages = count ? Math.ceil(count / itemsPerPage) : 1;
 
-  // Fetch reported usernames securely
+  // တိုင်ကြားခံရသည့် အသုံးပြုသူအမည်များကို လုံခြုံစွာ ရယူရန်
   const userIds = reports?.map((r) => r.reported_user_id).filter(Boolean) || [];
   const reportedUsersMap: Record<string, string> = {};
   
@@ -47,7 +47,8 @@ export default async function ReportsPage({
       .in('id', userIds);
       
     profiles?.forEach((p) => {
-      reportedUsersMap[p.id] = p.contact_username || 'Anonymous Employer';
+      // Anonymous Employer သို့မဟုတ် အမည်မသိ အလုပ်ရှင်
+      reportedUsersMap[p.id] = p.contact_username || 'အမည်မသိ အလုပ်ရှင်'; 
     });
   }
 

@@ -1,6 +1,9 @@
 // src/app/(dashboard)/page.tsx
+
 import { createClient } from '../../utils/supabase';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
+import { Search, User, MoreVertical } from 'lucide-react'; // Added Lucide icons
 
 export default async function Home() {
   const supabase = await createClient();
@@ -25,16 +28,22 @@ export default async function Home() {
     .from('profiles')
     .select('*', { count: 'exact', head: true });
 
+  // 3. Fetch 3 most recent users for the UI list
+  const { data: recentUsers } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(3);
+
   return (
-    <div className="w-full max-w-7xl mx-auto">
+    <div className="w-full max-w-7xl mx-auto pb-10">
       <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 mb-4 sm:mb-6">Platform Overview</h1>
       
-      {/* Changed to grid-cols-2 on medium screens for better mobile-tablet flow */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-10">
         
         {/* Active Posts Card */}
         <div className="bg-white p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-          {/* Decorative background icon */}
           <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
             <svg className="w-16 h-16 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M20 6h-4V4c0-1.103-.897-2-2-2h-4c-1.103 0-2 .897-2 2v2H4c-1.103 0-2 .897-2 2v12c0 1.103.897 2 2 2h16c1.103 0 2-.897 2-2V8c0-1.103-.897-2-2-2zM10 4h4v2h-4V4z"/></svg>
           </div>
@@ -60,6 +69,70 @@ export default async function Home() {
           <p className="text-3xl sm:text-4xl font-black text-slate-900 mt-2">{totalUsers || 0}</p>
         </div>
 
+      </div>
+
+      {/* Recent Users Section */}
+      <div>
+        <div className="flex justify-between items-end mb-4">
+          <h2 className="text-sm font-bold text-slate-400 uppercase tracking-wider">Recent Users</h2>
+          <Link href="/users" className="text-xs font-semibold text-blue-600 hover:underline">
+            View All
+          </Link>
+        </div>
+
+        {/* Modern Search Bar */}
+        <div className="relative mb-5">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <Search size={18} />
+          </div>
+          <input 
+            type="text" 
+            className="block w-full pl-10 pr-3 py-3 border border-slate-200 rounded-xl leading-5 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-shadow shadow-sm" 
+            placeholder="Search users..."
+          />
+        </div>
+
+        {/* Dynamic User List */}
+        <div className="space-y-3">
+          {recentUsers && recentUsers.length > 0 ? (
+            recentUsers.map((profile) => (
+              <div key={profile.id} className="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 flex items-center gap-4 hover:border-slate-200 transition-colors">
+                <div className="w-10 h-10 rounded-full bg-slate-100 flex-shrink-0 flex items-center justify-center text-slate-500">
+                  <User size={20} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center mb-1">
+                    <h3 className="text-sm font-bold text-slate-800 truncate">
+                      {profile.full_name || profile.username || `Unknown (${profile.id.substring(0, 4).toUpperCase()})`}
+                    </h3>
+                    <button className="text-slate-400 hover:text-slate-700 p-1 -mr-1 rounded-lg transition-colors">
+                      <MoreVertical size={18} />
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-2">{profile.role || 'Seeker'}</p>
+                  
+                  <div className="flex gap-2">
+                    {profile.is_verified ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700">Verified</span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600">Unverified</span>
+                    )}
+                    
+                    {profile.status === 'blocked' ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-rose-100 text-rose-700">Blocked</span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-100 text-emerald-700">Active</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-10 bg-white rounded-2xl border border-slate-200 border-dashed">
+              <p className="text-sm font-medium text-slate-500">No recent users found</p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
